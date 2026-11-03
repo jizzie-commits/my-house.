@@ -2,7 +2,7 @@ import streamlit as st
 import math
 
 # -----------------------------------------------------------------------------
-# 1. 페이지 기본 설정 및 아기자기한 파스텔 CSS 스타일 적용
+# 1. 페이지 기본 설정
 # -----------------------------------------------------------------------------
 st.set_page_config(
     page_title="Tiny Haven - 귀여운 아지트 집짓기",
@@ -11,8 +11,10 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 귀여운 파스텔 톤 및 카드 커스텀 스타일링
-st.markdown("""
+# -----------------------------------------------------------------------------
+# 2. 아기자기한 파스텔 CSS 스타일 적용 (SyntaxError 방지 처리)
+# -----------------------------------------------------------------------------
+custom_css = """
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Jua&family=Nanum+Gothic:wght@400;700&display=swap');
     
@@ -25,12 +27,10 @@ st.markdown("""
         color: #FF6B81 !important;
     }
     
-    /* 배경 및 서브 카드 디자인 */
     .stApp {
         background-color: #FFF9F5;
     }
     
-    /* 귀여운 아지트 결과 카드 */
     .house-card {
         background: linear-gradient(135deg, #FFE5EC 0%, #F0E6FF 100%);
         border: 3px solid #FFB7B2;
@@ -60,10 +60,32 @@ st.markdown("""
         margin-bottom: 15px;
     }
     
-    /* 안내 박스 스타일 */
     .info-box {
         background-color: #E8F8F5;
         border-left: 5px solid #2ECC71;
         padding: 12px 15px;
         border-radius: 8px;
-        font-size: 0.
+        font-size: 0.95rem;
+        color: #27AE60;
+        margin-top: 10px;
+    }
+</style>
+"""
+
+st.markdown(custom_css, unsafe_allow_html=True)
+
+# -----------------------------------------------------------------------------
+# 3. 메인 타이틀 및 소개
+# -----------------------------------------------------------------------------
+st.title("🏡 Tiny Haven : 세상에서 가장 귀여운 나만의 아지트")
+st.caption("당신의 공간 취향과 대지의 기후·지형을 분석해 꼭 맞는 동화 속 작은 집을 지어드려요! ✨")
+st.divider()
+
+# -----------------------------------------------------------------------------
+# 4. 사이드바 - 사용자 취향 및 환경 데이터 입력
+# -----------------------------------------------------------------------------
+with st.sidebar:
+    st.header("🎨 1. 나만의 취향 선택하기")
+    
+    purpose = st.selectbox(
+        "아지트의 주
