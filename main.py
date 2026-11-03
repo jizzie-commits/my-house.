@@ -1,76 +1,174 @@
-import math
+import datetime
+import requests
+import pandas as pd
+import streamlit as st
 
-def get_valid_float(prompt, min_val=0.0, max_val=10000.0):
-    """
-    [평가 요소 6] 입력 오류 및 런타임 에러 방지를 위한 예외 처리 함수
-    """
-    while True:
-        try:
-            val = float(input(prompt))
-            if val < min_val or val > max_val:
-                print(f"[경고] {min_val} 이상 {max_val} 이하의 수치를 입력해주세요.")
-                continue
-            return val
-        except ValueError:
-            print("[에러] 문자가 입력되었습니다. 숫자만 정확히 입력해주세요.")
+# -----------------------------------------------------------------------------
+# 1. 페이지 기본 설정 및 디자인
+# -----------------------------------------------------------------------------
+st.set_page_config(
+    page_title="어제 박스오피스 순위",
+    page_icon="🎬",
+    layout="wide"
+)
 
-def main():
-    print("=" * 60)
-    print(" GeoPersona Arch - 아기자기 맞춤형 소형 건축 설계 프로그램")
-    print("=" * 60)
+st.title("🎬 어제 일별 박스오피스 TOP 10")
 
-    # 1. 귀여운 취향 데이터 입력
-    print("\n[1] 원하는 아기자기한 건축 스타일을 선택하세요:")
-    print("  1) 동화 속 오두막 스타일 (뾰족 지붕 + 원목 감성)")
-    print("  2) 아기자기 버섯/큐브 스타일 (동글동글 형태 + 파스텔 컬러)")
-    style_choice = input("선택 (1 또는 2): ").strip()
-    if style_choice not in ['1', '2']:
-        print("[안내] 잘못된 입력으로 기본값(1번 동화 오두막)으로 설정됩니다.")
-        style_choice = '1'
+# -----------------------------------------------------------------------------
+# 2. 한국 시간(KST, UTC+9) 기준 어제 날짜 구하기
+# -----------------------------------------------------------------------------
+# 배포 서버(Streamlit Cloud)의 시계는 UTC(세계협정시) 기준일 수 있으므로,
+# 한국 시간(UTC+9)을 명확하게 계산해서 어제 날짜를 구합니다.
+utc_now = datetime.datetime.now(datetime.timezone.utc)
+kst_now = utc_now + datetime.timedelta(hours=9)
+yesterday = kst_now - datetime.timedelta(days=1)
+target_dt = yesterday.strftime("%Y%m%d")  # KOBIS API 규격인 YYYYMMDD 형태 문자열
 
-    # 2. 기후 및 지형 데이터 입력
-    print("\n[2] 설치할 장소의 기후 및 지형 정보 입력:")
-    snow = get_valid_float("  - 연중 최대 적설량 (cm): ", 0, 500)
-    wind = get_valid_float("  - 최대 풍속 (m/s): ", 0, 100)
-    slope = get_valid_float("  - 대지 경사도 (도, °): ", 0, 90)
-    sunlight = get_valid_float("  - 일일 평균 일조시간 (시간): ", 1, 24)
-    area = get_valid_float("  - 희망 건축 면적 (평, 3~10평 권장): ", 1, 30)
+st.caption(f"📅 기준 날짜: {yesterday.strftime('%Y년 %m월 %d일')} (한국 시간 기준)")
 
-    # 3. 건축 알고리즘 처리
-    # (1) 지붕 형태 계산 (디자인 감성 + 기후 대응)
-    if snow >= 50:
-        roof_type = "동화 속 삼각 뾰족지붕 (Gable Roof, 60°)"
-        roof_detail = "눈이 쏟아져 내리는 안전함과 빨간 기와 포인트의 귀여운 느낌"
-    else:
-        if style_choice == '2':
-            roof_type = "아기자기 버섯형 돔 지붕 (Mushroom Dome)"
-            roof_detail = "동글동글한 모서리로 바람 저항을 줄이고 장난감 같은 감성 연출"
-        else:
-            roof_type = "아담한 외경사 파스텔 지붕 (15°)"
-            roof_detail = "빗물 배수가 원활하고 조그만 다락방 공간 확보 가능"
+# -----------------------------------------------------------------------------
+# 3. Streamlit Secrets에서 API 인증키 불러오기
+# -----------------------------------------------------------------------------
+# Secrets에 KOBIS_KEY가 설정되어 있는지 확인합니다.
+if "KOBIS_KEY" not in st.secrets or not st.secrets["KOBIS_KEY"]:
+    st.error("⚠️ API 인증키(KOBIS_KEY)가 설정되지 않았습니다.")
+    st.info("""
+    **💡 확인 방법:**
+    1. Streamlit Cloud의 앱 설정 화면으로 이동합니다.
+    2. **Secrets** 메뉴를 선택합니다.
+    3. 아래 형식으로 발급받은 API 키를 등록해 주세요:
+       ```toml
+       KOBIS_KEY = "발급받은_키_문자열"
+       ```
+    """)
+    st.stop()
 
-    # (2) 기초 및 외장재 추천
-    foundation = "트리하우스 느낌의 오두막 기둥 기초 (Stilt)" if slope >= 15 else "아담한 단층 매트 기초"
-    facade = "내후성 파스텔 톤 스틸 판넬 (강풍 방지)" if wind >= 25 else "크림아이보리 원목 파판 & 민트 포인트 외장재"
+api_key = st.secrets["KOBIS_KEY"]
 
-    # (3) 디테일 창호 설계
-    window_spec = "동그란 격자 창문 & 미니 아치형 도어" if style_choice == '2' else "삼각 다락 창문 & 작은 코너 창"
+# -----------------------------------------------------------------------------
+# 4. KOBIS API 데이터 요청
+# -----------------------------------------------------------------------------
+url = "https://www.kobis.or.kr/kobisopenapi/webservice/rest/boxoffice/searchDailyBoxOfficeList.json"
+params = {
+    "key": api_key,
+    "targetDt": target_dt
+}
 
-    # (4) 오프그리드 태양광 패널 수 계산
-    solar_panels = math.ceil((area * 1.5) / sunlight)
+try:
+    response = requests.get(url, params=params, timeout=10)
+    response.raise_for_status()  # HTTP 상태 코드 에러(4xx, 5xx) 체크
+    data = response.json()
+except requests.exceptions.RequestException as e:
+    st.error(f"⚠️ 영화진흥위원회(KOBIS) 서버와의 통신 중 오류가 발생했습니다: {e}")
+    st.info("💡 인터넷 연결 상태를 확인하거나 잠시 후 다시 시도해 주세요.")
+    st.stop()
 
-    # 4. 결과 리포트 출력
-    print("\n" + "=" * 60)
-    print(" [GeoPersona Arch] 귀여운 소형 건축물 최종 추천 브리프")
-    print("=" * 60)
-    print(f"■ 건축 컵셉 디자인 : {'동화 오두막' if style_choice == '1' else '버섯 큐브 하우스'}")
-    print(f"■ 추천 지붕 형태   : {roof_type}")
-    print(f"   └ 디자인 특징   : {roof_detail}")
-    print(f"■ 대지 기초 구조   : {foundation} (경사도: {slope}°)")
-    print(f"■ 권장 파스텔 자재 : {facade}")
-    print(f"■ 아기자기 창호   : {window_spec}")
-    print(f"■ 미니 태양광 패널 : {solar_panels}개 (일조시간 {sunlight}시간 기준)")
-    print("=" * 60)
+# -----------------------------------------------------------------------------
+# 5. 응답 데이터 검증 (faultInfo 응답 및 빈 데이터 예외 처리)
+# -----------------------------------------------------------------------------
+# KOBIS API는 키가 잘못되어도 200 OK와 함께 'faultInfo' 객체를 반환합니다.
+if "faultInfo" in data:
+    fault = data["faultInfo"]
+    st.error(f"⚠️ API 인증 에러가 발생했습니다. (사유: {fault.get('message', '알 수 없음')})")
+    st.info("""
+    **💡 확인해야 할 사항:**
+    1. Streamlit Secrets에 입력한 `KOBIS_KEY` 값이 정확한지 확인해 주세요.
+    2. [KOBIS 영화관입장권통합전산망 오픈API](https://www.kobis.or.kr/kobisopenapi)에서 키 발급 및 활성화 상태를 확인해 주세요.
+    """)
+    st.stop()
 
-if __name__ == "__main__":
-    main()
+# boxOfficeResult 내의 dailyBoxOfficeList 추출
+box_office_result = data.get("boxOfficeResult", {})
+daily_list = box_office_result.get("dailyBoxOfficeList", [])
+
+# 영화 목록이 비어있는 경우 안내
+if not daily_list:
+    st.warning("⚠️ 어제 날짜의 박스오피스 데이터가 존재하지 않거나 아직 집계 전입니다.")
+    st.info("""
+    **💡 확인해야 할 사항:**
+    - 한국 시간으로 이른 아침일 경우 어제 데이터 집계가 아직 완료되지 않았을 수 있습니다.
+    - KOBIS 시스템 점검 시간인지 확인해 주세요.
+    """)
+    st.stop()
+
+# -----------------------------------------------------------------------------
+# 6. 데이터 전처리 (문자열 -> 숫자 변환)
+# -----------------------------------------------------------------------------
+df = pd.DataFrame(daily_list)
+
+# KOBIS API의 숫자 값은 전부 문자열로 전송되므로 수치형으로 변환해 줍니다.
+numeric_cols = ["rank", "rankInten", "audiCnt", "audiAcc", "scrnCnt", "showCnt"]
+for col in numeric_cols:
+    if col in df.columns:
+        df[col] = pd.to_numeric(df[col], errors="coerce")
+
+# -----------------------------------------------------------------------------
+# 7. 1위 영화 지표 카드 표시 (Metric 카드 3장)
+# -----------------------------------------------------------------------------
+top1 = df.iloc[0]  # 순위 1위 데이터
+
+st.subheader(f"🥇 1위 영화: {top1['movieNm']}")
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    st.metric(
+        label="일일 관객수",
+        value=f"{top1['audiCnt']:,}명",
+        delta=f"전날 대비 순위 {top1['rankInten']:+}위" if top1['rankInten'] != 0 else "순위 변동 없음"
+    )
+
+with col2:
+    st.metric(
+        label="누적 관객수",
+        value=f"{top1['audiAcc']:,}명"
+    )
+
+with col3:
+    st.metric(
+        label="스크린수 / 상영횟수",
+        value=f"{top1['scrnCnt']:,}개",
+        delta=f"총 {top1['showCnt']:,}회 상영",
+        delta_color="off"
+    )
+
+st.markdown("---")
+
+# -----------------------------------------------------------------------------
+# 8. 관객수 상위 5편 막대그래프
+# -----------------------------------------------------------------------------
+st.subheader("📊 관객수 상위 5개 영화")
+
+top5_df = df.head(5)[["movieNm", "audiCnt"]].copy()
+# 막대그래프 세로축 정렬을 위해 영화명을 인덱스로 지정
+top5_df = top5_df.rename(columns={"movieNm": "영화명", "audiCnt": "일일 관객수"})
+top5_df = top5_df.set_index("영화명")
+
+st.bar_chart(top5_df)
+
+st.markdown("---")
+
+# -----------------------------------------------------------------------------
+# 9. 박스오피스 전체 순위 표 출력
+# -----------------------------------------------------------------------------
+st.subheader("📋 전체 박스오피스 순위 (TOP 10)")
+
+# 필요한 컬럼만 추출하여 한글 명칭으로 변경
+display_df = df[[
+    "rank", "movieNm", "openDt", "audiCnt", "audiAcc", "scrnCnt"
+]].copy()
+
+display_df.columns = ["순위", "영화명", "개봉일", "관객수", "누적관객", "스크린수"]
+
+# 천 단위 쉼표 포맷팅을 적용하여 Streamlit 대화형 표로 출력
+st.dataframe(
+    display_df,
+    use_container_width=True,
+    hide_index=True,
+    column_config={
+        "순위": st.column_config.NumberColumn(format="%d위"),
+        "관객수": st.column_config.NumberColumn(format="%d명"),
+        "누적관객": st.column_config.NumberColumn(format="%d명"),
+        "스크린수": st.column_config.NumberColumn(format="%d개"),
+    }
+)
