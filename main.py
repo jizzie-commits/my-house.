@@ -161,8 +161,8 @@ elif st.session_state.page == "input":
 # =============================================================================
 elif st.session_state.page == "loading":
     st.markdown("<br><br>", unsafe_allow_html=True)
-    st.subheader("🐷 하트 돼지가 섬세하게 마인크래프트 블록을 쌓고 있습니다...")
-    st.caption("디테일한 입체 구조와 위치 분석을 진행 중입니다 ⏳")
+    st.subheader("🐷 하트 돼지가 배경 산과 마인크래프트 집을 디자인하는 중입니다...")
+    st.caption("실제 지구본 매칭 및 입체 배경을 구성하고 있습니다 ⏳")
     
     progress_bar = st.progress(0)
     for i in range(100):
@@ -173,7 +173,7 @@ elif st.session_state.page == "loading":
     st.rerun()
 
 # =============================================================================
-# [화면 4] 초고퀄리티 3D 집 & 실제 국가 특징 + 미니 지구본
+# [화면 4] 초고퀄리티 3D 집 (배경 포함) & 실제 미니 지구본
 # =============================================================================
 elif st.session_state.page == "result":
     top_col1, top_col2 = st.columns([4, 1])
@@ -204,7 +204,7 @@ elif st.session_state.page == "result":
         b_color, r_color, s_color = "0x8d5b4c", "0xa93226", "0x27ae60"
     elif "해안가" in house_style:
         country_name = "몰디브 (마벨레 아일랜드)"
-        country_feature = "에메랄드빛 해해상 위에 지어진 휴양 리조트입니다. 습기와 해풍에 강한 모듈러 데크와 투명한 수평선 뷰를 갖추고 있습니다."
+        country_feature = "에메랄드빛 해상 위에 지어진 휴양 리조트입니다. 습기와 해풍에 강한 모듈러 데크와 투명한 수평선 뷰를 갖추고 있습니다."
         lat, lon = 3.2028, 73.2207
         b_color, r_color, s_color = "0xf5efff", "0xd35400", "0x00d2d3"
     else:
@@ -213,13 +213,15 @@ elif st.session_state.page == "result":
         lat, lon = 25.2048, 55.2708
         b_color, r_color, s_color = "0x7f8c8d", "0x16a085", "0xf1c40f"
 
-    # 1. 초고퀄리티 마인크래프트 입체 집 3D HTML
+    # 1. 자연 배경(산, 언덕, 대지)이 포함된 3D 마인크래프트 집 HTML
     high_qual_house_template = """
-    <div id="mc-container" style="width:100%; height:520px; border-radius:15px; overflow:hidden; background:#1b262c;"></div>
+    <div id="mc-container" style="width:100%; height:520px; border-radius:15px; overflow:hidden; background:#81ecec;"></div>
     <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
     <script>
       const container = document.getElementById('mc-container');
       const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x74b9ff); // 푸른 하늘 배경
+
       const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
       const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
       renderer.setSize(container.clientWidth, container.clientHeight);
@@ -231,27 +233,39 @@ elif st.session_state.page == "result":
       dirLight1.position.set(12, 22, 15);
       scene.add(dirLight1);
 
+      const mainGroup = new THREE.Group();
+
+      // [배경 배경요소] 마인크래프트 잔디 지형 & 뒷산
+      const groundMat = new THREE.MeshStandardMaterial({ color: 0x55efc4, roughness: 0.8 });
+      const ground = new THREE.Mesh(new THREE.BoxGeometry(14, 0.4, 14), groundMat);
+      ground.position.y = -0.2;
+      mainGroup.add(ground);
+
+      const mountainMat = new THREE.MeshStandardMaterial({ color: 0x00b894, roughness: 0.9 });
+      for (let i = 0; i < 5; i++) {
+        const hill = new THREE.Mesh(new THREE.BoxGeometry(3 + i, 2 + i*0.5, 3 + i), mountainMat);
+        hill.position.set(-4 + (i*1.5), 0.8 + (i*0.2), -4 - (i*0.5));
+        mainGroup.add(hill);
+      }
+
+      // [건축물] 디테일한 집 구조
       const houseGroup = new THREE.Group();
 
-      // 디테일한 1층 베이스
       const b1Mat = new THREE.MeshStandardMaterial({ color: __B_COLOR__, roughness: 0.3 });
       const b1 = new THREE.Mesh(new THREE.BoxGeometry(3.4, 1.3, 2.8), b1Mat);
       b1.position.y = 0.65;
       houseGroup.add(b1);
 
-      // 2층 모듈 (오프셋 레이어)
       const b2Mat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 });
       const b2 = new THREE.Mesh(new THREE.BoxGeometry(2.5, 1.2, 2.4), b2Mat);
       b2.position.set(-0.35, 1.9, 0.1);
       houseGroup.add(b2);
 
-      // 옥상 테라스 펜스 & 지붕
       const roofMat = new THREE.MeshStandardMaterial({ color: __R_COLOR__ });
       const roof = new THREE.Mesh(new THREE.BoxGeometry(2.7, 0.15, 2.5), roofMat);
       roof.position.set(-0.35, 2.55, 0.1);
       houseGroup.add(roof);
 
-      // 반짝이는 마인크래프트 통유리 창호
       const winMat = new THREE.MeshStandardMaterial({ color: 0x81ecec, transparent: true, opacity: 0.75, metalness: 0.8 });
       const win1 = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.8, 0.05), winMat);
       win1.position.set(0.6, 0.65, 1.41);
@@ -261,35 +275,20 @@ elif st.session_state.page == "result":
       win2.position.set(-0.35, 1.9, 1.31);
       houseGroup.add(win2);
 
-      // 야외 프리미엄 인피니티 풀장
       const poolMat = new THREE.MeshStandardMaterial({ color: __S_COLOR__, roughness: 0.1, metalness: 0.6 });
       const pool = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.18, 1.8), poolMat);
       pool.position.set(1.3, 0.09, -0.2);
       houseGroup.add(pool);
 
-      // 데크 스텝 계단 블록
-      const stepMat = new THREE.MeshStandardMaterial({ color: 0xdcdde1 });
-      for(let i=0; i<3; i++) {
-        const step = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.1, 0.3), stepMat);
-        step.position.set(0.6, 0.1 + (i*0.1), 1.5 + (i*0.25));
-        houseGroup.add(step);
-      }
+      mainGroup.add(houseGroup);
+      scene.add(mainGroup);
 
-      // 수직 빔 및 조명 펜스 기둥
-      const pillarMat = new THREE.MeshStandardMaterial({ color: 0x2f3640 });
-      for(let x of [-1.9, 1.5]) {
-        const p = new THREE.Mesh(new THREE.BoxGeometry(0.12, 2.6, 0.12), pillarMat);
-        p.position.set(x, 1.3, 1.3);
-        houseGroup.add(p);
-      }
-
-      scene.add(houseGroup);
-      camera.position.set(5.8, 4.8, 6.8);
+      camera.position.set(7, 5, 8);
       camera.lookAt(0, 1, 0);
 
       function animate() {
         requestAnimationFrame(animate);
-        houseGroup.rotation.y += 0.007;
+        mainGroup.rotation.y += 0.005;
         renderer.render(scene, camera);
       }
       animate();
@@ -297,7 +296,7 @@ elif st.session_state.page == "result":
     """
     high_qual_house_html = high_qual_house_template.replace("__B_COLOR__", str(b_color)).replace("__R_COLOR__", str(r_color)).replace("__S_COLOR__", str(s_color))
 
-    # 2. 아주 작은(미니) 3D 지구본 HTML
+    # 2. 실제 지구본 형태(대륙 파랑/초록 텍스처 느낌) 3D 미니 지구본 HTML
     mini_globe_template = """
     <div id="mini-globe-container" style="width:100%; height:180px; border-radius:12px; overflow:hidden; background:#0c2461;"></div>
     <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
@@ -311,15 +310,29 @@ elif st.session_state.page == "result":
 
       const ambientLight = new THREE.AmbientLight(0xffffff, 0.95);
       scene.add(ambientLight);
+      const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      dirLight.position.set(5, 5, 5);
+      scene.add(dirLight);
 
       const globeGroup = new THREE.Group();
 
-      // 미니 구체
-      const globe = new THREE.Mesh(new THREE.SphereGeometry(1.2, 24, 24), new THREE.MeshStandardMaterial({ color: 0x1e3799, wireframe: true, transparent: true, opacity: 0.6 }));
-      globeGroup.add(globe);
+      // 바다 구체 (실제 지구 바다 파란색)
+      const oceanGeo = new THREE.SphereGeometry(1.2, 32, 32);
+      const oceanMat = new THREE.MeshStandardMaterial({ color: 0x0984e3, roughness: 0.4 });
+      const ocean = new THREE.Mesh(oceanGeo, oceanMat);
+      globeGroup.add(ocean);
 
-      const innerGlobe = new THREE.Mesh(new THREE.SphereGeometry(1.18, 24, 24), new THREE.MeshStandardMaterial({ color: 0x0a3d62 }));
-      globeGroup.add(innerGlobe);
+      // 실제 대륙 느낌의 블록형 녹색/갈색 대륙 레이어
+      const landGroup = new THREE.Group();
+      const landMat = new THREE.MeshStandardMaterial({ color: 0x2ed573, roughness: 0.8 });
+      for(let i=0; i<30; i++) {
+        const landBlock = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.1), landMat);
+        const latR = (Math.random() - 0.5) * Math.PI;
+        const lonR = (Math.random() - 0.5) * Math.PI * 2;
+        landBlock.position.set(1.21 * Math.cos(latR) * Math.cos(lonR), 1.21 * Math.sin(latR), 1.21 * Math.cos(latR) * Math.sin(lonR));
+        landGroup.add(landBlock);
+      }
+      globeGroup.add(landGroup);
 
       function latLonToVector3(lat, lon, radius) {
         const phi = (90 - lat) * (Math.PI / 180);
@@ -330,11 +343,10 @@ elif st.session_state.page == "result":
         return new THREE.Vector3(x, y, z);
       }
 
-      // 빨간색 3D 화살표 마커
-      const markerPos = latLonToVector3(__LAT__, __LON__, 1.22);
+      // 위치 표시 빨간색 3D 화살표
+      const markerPos = latLonToVector3(__LAT__, __LON__, 1.25);
       const arrowGroup = new THREE.Group();
-
-      const cone = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.28, 12), new THREE.MeshStandardMaterial({ color: 0xff3838, emissive: 0xff4d4d, emissiveIntensity: 0.7 }));
+      const cone = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.28, 12), new THREE.MeshStandardMaterial({ color: 0xff4757, emissive: 0xff6b81, emissiveIntensity: 0.8 }));
       cone.rotation.x = Math.PI;
       arrowGroup.add(cone);
 
@@ -362,11 +374,11 @@ elif st.session_state.page == "result":
     col1, col2 = st.columns([3, 2])
 
     with col1:
-        st.subheader("🧊 초고퀄리티 3D 마인크래프트 집")
+        st.subheader("🧊 자연 배경이 포함된 3D 마인크래프트 집")
         st.components.v1.html(high_qual_house_html, height=530)
 
     with col2:
-        st.subheader("🌐 미니 지구본 위치 표시")
+        st.subheader("🌐 실제 지구본 위치 표시")
         st.components.v1.html(mini_globe_html, height=190)
         
         st.markdown(f"""
@@ -387,4 +399,4 @@ elif st.session_state.page == "result":
         "상세 설명": [house_style, season, weather, material, country_name]
     }
     st.table(report_data)
-    st.success("🎉 하트 돼지와 함께한 고퀄리티 마인크래프트 아지트 생성이 완류되었습니다!")
+    st.success("🎉 하트 돼지와 함께한 고퀄리티 마인크래프트 아지트 생성이 완료되었습니다!")
