@@ -128,10 +128,11 @@ elif st.session_state.page == "input":
     with col_a:
         st.subheader("1. 건축 스타일 및 분위기")
         house_style = st.selectbox("🏰 건물 양식", [
-            "모던 럭셔리 수영장 빌라 (Modern Villa)",
-            "유럽풍 클래식 판타지 캐빈 (Medieval Cottage)",
-            "해안가 럭셔리 리조트 하우스 (Beach Resort)",
-            "도심 속 모던 고층 아지트 (City Penthouse)"
+            "🌳 숲속 비밀 나무집 (Secret Treehouse)",
+            "✨ 모던 럭셔리 수영장 빌라 (Modern Villa)",
+            "🏰 유럽풍 클래식 판타지 캐빈 (Medieval Cottage)",
+            "🏖️ 해안가 럭셔리 리조트 하우스 (Beach Resort)",
+            "🏙️ 도심 속 모던 고층 아지트 (City Penthouse)"
         ])
         season = st.selectbox("🌸 사계절 선택", ["봄 (Spring)", "여름 (Summer)", "가을 (Autumn)", "겨울 (Winter)"])
 
@@ -139,6 +140,7 @@ elif st.session_state.page == "input":
         st.subheader("2. 날씨 및 블록 재료")
         weather = st.selectbox("🌦️ 원하는 날씨", ["화창한 햇살 맑은 날", "비 내리는 운치 있는 날", "눈 내리는 흰 겨울 날", "노을빛 석양 날"])
         material = st.selectbox("🧱 주요 마인크래프트 블록", [
+            "원목 & 덩굴 & 나뭇잎 블록 (Treehouse)",
             "석영 & 흑요석 & 통유리 (Modern)",
             "가공된 참나무 & 암석 & 집조명 (Classic)",
             "백색 콘크리트 & 야자수목 (Resort)",
@@ -161,8 +163,8 @@ elif st.session_state.page == "input":
 # =============================================================================
 elif st.session_state.page == "loading":
     st.markdown("<br><br>", unsafe_allow_html=True)
-    st.subheader("🐷 하트 돼지가 배경 산과 마인크래프트 집을 디자인하는 중입니다...")
-    st.caption("실제 지구본 매칭 및 입체 배경을 구성하고 있습니다 ⏳")
+    st.subheader("🐷 하트 돼지가 나뭇잎과 나무 블록을 정성껏 구성하는 중입니다...")
+    st.caption("실제 지구본 매칭 및 입체 3D 아지트를 구성하고 있습니다 ⏳")
     
     progress_bar = st.progress(0)
     for i in range(100):
@@ -173,7 +175,7 @@ elif st.session_state.page == "loading":
     st.rerun()
 
 # =============================================================================
-# [화면 4] 초고퀄리티 3D 집 (배경 포함) & 실제 미니 지구본
+# [화면 4] 초고퀄리티 3D 집 (나무집 지원) & 실제 미니 지구본
 # =============================================================================
 elif st.session_state.page == "result":
     top_col1, top_col2 = st.columns([4, 1])
@@ -192,35 +194,45 @@ elif st.session_state.page == "result":
     weather = st.session_state.weather
     material = st.session_state.material
 
-    if "모던 럭셔리" in house_style:
+    if "나무집" in house_style:
+        country_name = "인도네시아 발리 (우붓 열대우림)"
+        country_feature = "울창한 열대우림 수목 상부에 지어진 친환경 트리하우스 지구입니다. 습한 기후에 강한 단단한 가공 원목과 바람이 잘 통하는 자연 숲 뷰가 특징입니다."
+        lat, lon = -8.5069, 115.2625
+        b_color, r_color, s_color = "0x8d5b4c", "0x27ae60", "0x00b894"
+        is_treehouse = True
+    elif "모던 럭셔리" in house_style:
         country_name = "미국 캘리포니아 (말리부)"
         country_feature = "태평양 해안선을 따라 형성된 고급 해양 빌라 지구입니다. 온난한 지중해성 기후로 야외 수영장과 시원한 유리 통창 구조가 특징입니다."
         lat, lon = 34.0259, -118.7798
         b_color, r_color, s_color = "0xeaeaea", "0x2c3e50", "0x00a8ff"
+        is_treehouse = False
     elif "유럽풍" in house_style:
         country_name = "독일 바이에른 (알프스 산간 마을)"
         country_feature = "유럽 전통 목조 아치 구조와 울창한 숲이 어우러진 차분한 동화 마을입니다. 눈과 비에 강한 경사 박공지붕과 포근한 목재 질감이 매력적입니다."
         lat, lon = 47.5596, 10.7498
         b_color, r_color, s_color = "0x8d5b4c", "0xa93226", "0x27ae60"
+        is_treehouse = False
     elif "해안가" in house_style:
         country_name = "몰디브 (마벨레 아일랜드)"
         country_feature = "에메랄드빛 해상 위에 지어진 휴양 리조트입니다. 습기와 해풍에 강한 모듈러 데크와 투명한 수평선 뷰를 갖추고 있습니다."
         lat, lon = 3.2028, 73.2207
         b_color, r_color, s_color = "0xf5efff", "0xd35400", "0x00d2d3"
+        is_treehouse = False
     else:
         country_name = "아랍에미리트 두바이 (초고층 도심)"
         country_feature = "미래지향적 도심 경관과 화려한 석양이 어우러지는 현대식 스카이라인입니다. 내후성이 강한 스틸 자재와 옥상 라운지가 배치됩니다."
         lat, lon = 25.2048, 55.2708
         b_color, r_color, s_color = "0x7f8c8d", "0x16a085", "0xf1c40f"
+        is_treehouse = False
 
-    # 1. 자연 배경(산, 언덕, 대지)이 포함된 3D 마인크래프트 집 HTML
+    # 1. 3D 마인크래프트 입체 집 (나무집 포함) HTML
     high_qual_house_template = """
     <div id="mc-container" style="width:100%; height:520px; border-radius:15px; overflow:hidden; background:#81ecec;"></div>
     <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
     <script>
       const container = document.getElementById('mc-container');
       const scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x74b9ff); // 푸른 하늘 배경
+      scene.background = new THREE.Color(0x74b9ff);
 
       const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
       const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -235,56 +247,78 @@ elif st.session_state.page == "result":
 
       const mainGroup = new THREE.Group();
 
-      // [배경 배경요소] 마인크래프트 잔디 지형 & 뒷산
+      // [잔디 대지]
       const groundMat = new THREE.MeshStandardMaterial({ color: 0x55efc4, roughness: 0.8 });
       const ground = new THREE.Mesh(new THREE.BoxGeometry(14, 0.4, 14), groundMat);
       ground.position.y = -0.2;
       mainGroup.add(ground);
 
-      const mountainMat = new THREE.MeshStandardMaterial({ color: 0x00b894, roughness: 0.9 });
-      for (let i = 0; i < 5; i++) {
-        const hill = new THREE.Mesh(new THREE.BoxGeometry(3 + i, 2 + i*0.5, 3 + i), mountainMat);
-        hill.position.set(-4 + (i*1.5), 0.8 + (i*0.2), -4 - (i*0.5));
-        mainGroup.add(hill);
-      }
-
-      // [건축물] 디테일한 집 구조
       const houseGroup = new THREE.Group();
+      const isTreehouse = __IS_TREEHOUSE__;
 
-      const b1Mat = new THREE.MeshStandardMaterial({ color: __B_COLOR__, roughness: 0.3 });
-      const b1 = new THREE.Mesh(new THREE.BoxGeometry(3.4, 1.3, 2.8), b1Mat);
-      b1.position.y = 0.65;
-      houseGroup.add(b1);
+      if (isTreehouse) {
+        // [나무집 전용 3D 디테일] 대형 고목 나무 기둥
+        const trunkMat = new THREE.MeshStandardMaterial({ color: 0x5c4033, roughness: 0.9 });
+        const trunk = new THREE.Mesh(new THREE.BoxGeometry(1.6, 3.5, 1.6), trunkMat);
+        trunk.position.y = 1.65;
+        houseGroup.add(trunk);
 
-      const b2Mat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 });
-      const b2 = new THREE.Mesh(new THREE.BoxGeometry(2.5, 1.2, 2.4), b2Mat);
-      b2.position.set(-0.35, 1.9, 0.1);
-      houseGroup.add(b2);
+        // 나무 상부의 아늑한 오두막 본체
+        const houseBodyMat = new THREE.MeshStandardMaterial({ color: 0x8d5b4c, roughness: 0.5 });
+        const houseBody = new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.5, 2.4), houseBodyMat);
+        houseBody.position.set(0, 3.4, 0);
+        houseGroup.add(houseBody);
 
-      const roofMat = new THREE.MeshStandardMaterial({ color: __R_COLOR__ });
-      const roof = new THREE.Mesh(new THREE.BoxGeometry(2.7, 0.15, 2.5), roofMat);
-      roof.position.set(-0.35, 2.55, 0.1);
-      houseGroup.add(roof);
+        // 풍성한 나뭇잎 지붕 (마인크래프트 풍 잎사귀 블록들)
+        const leafMat = new THREE.MeshStandardMaterial({ color: 0x27ae60, roughness: 0.6 });
+        for(let x = -2; x <= 2; x += 1.2) {
+          for(let z = -2; z <= 2; z += 1.2) {
+            const leaf = new THREE.Mesh(new THREE.BoxGeometry(1.3, 1.1, 1.3), leafMat);
+            leaf.position.set(x * 0.8, 4.4 + (Math.random()*0.3), z * 0.8);
+            houseGroup.add(leaf);
+          }
+        }
 
-      const winMat = new THREE.MeshStandardMaterial({ color: 0x81ecec, transparent: true, opacity: 0.75, metalness: 0.8 });
-      const win1 = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.8, 0.05), winMat);
-      win1.position.set(0.6, 0.65, 1.41);
-      houseGroup.add(win1);
+        // 나무 사다리 블록
+        const ladderMat = new THREE.MeshStandardMaterial({ color: 0xf39c12 });
+        for(let y = 0.2; y < 2.8; y += 0.35) {
+          const step = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.08, 0.1), ladderMat);
+          step.position.set(0, y, 0.85);
+          houseGroup.add(step);
+        }
+      } else {
+        // [일반 건물]
+        const b1Mat = new THREE.MeshStandardMaterial({ color: __B_COLOR__, roughness: 0.3 });
+        const b1 = new THREE.Mesh(new THREE.BoxGeometry(3.4, 1.3, 2.8), b1Mat);
+        b1.position.y = 0.65;
+        houseGroup.add(b1);
 
-      const win2 = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.75, 0.05), winMat);
-      win2.position.set(-0.35, 1.9, 1.31);
-      houseGroup.add(win2);
+        const b2Mat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 });
+        const b2 = new THREE.Mesh(new THREE.BoxGeometry(2.5, 1.2, 2.4), b2Mat);
+        b2.position.set(-0.35, 1.9, 0.1);
+        houseGroup.add(b2);
 
-      const poolMat = new THREE.MeshStandardMaterial({ color: __S_COLOR__, roughness: 0.1, metalness: 0.6 });
-      const pool = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.18, 1.8), poolMat);
-      pool.position.set(1.3, 0.09, -0.2);
-      houseGroup.add(pool);
+        const roofMat = new THREE.MeshStandardMaterial({ color: __R_COLOR__ });
+        const roof = new THREE.Mesh(new THREE.BoxGeometry(2.7, 0.15, 2.5), roofMat);
+        roof.position.set(-0.35, 2.55, 0.1);
+        houseGroup.add(roof);
+
+        const winMat = new THREE.MeshStandardMaterial({ color: 0x81ecec, transparent: true, opacity: 0.75, metalness: 0.8 });
+        const win1 = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.8, 0.05), winMat);
+        win1.position.set(0.6, 0.65, 1.41);
+        houseGroup.add(win1);
+
+        const poolMat = new THREE.MeshStandardMaterial({ color: __S_COLOR__, roughness: 0.1, metalness: 0.6 });
+        const pool = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.18, 1.8), poolMat);
+        pool.position.set(1.3, 0.09, -0.2);
+        houseGroup.add(pool);
+      }
 
       mainGroup.add(houseGroup);
       scene.add(mainGroup);
 
       camera.position.set(7, 5, 8);
-      camera.lookAt(0, 1, 0);
+      camera.lookAt(0, 1.5, 0);
 
       function animate() {
         requestAnimationFrame(animate);
@@ -294,9 +328,15 @@ elif st.session_state.page == "result":
       animate();
     </script>
     """
-    high_qual_house_html = high_qual_house_template.replace("__B_COLOR__", str(b_color)).replace("__R_COLOR__", str(r_color)).replace("__S_COLOR__", str(s_color))
+    high_qual_house_html = (
+        high_qual_house_template
+        .replace("__B_COLOR__", str(b_color))
+        .replace("__R_COLOR__", str(r_color))
+        .replace("__S_COLOR__", str(s_color))
+        .replace("__IS_TREEHOUSE__", "true" if is_treehouse else "false")
+    )
 
-    # 2. 실제 지구본 형태(대륙 파랑/초록 텍스처 느낌) 3D 미니 지구본 HTML
+    # 2. 실제 지구본 형태 미니 3D 지구본 HTML
     mini_globe_template = """
     <div id="mini-globe-container" style="width:100%; height:180px; border-radius:12px; overflow:hidden; background:#0c2461;"></div>
     <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
@@ -316,13 +356,10 @@ elif st.session_state.page == "result":
 
       const globeGroup = new THREE.Group();
 
-      // 바다 구체 (실제 지구 바다 파란색)
-      const oceanGeo = new THREE.SphereGeometry(1.2, 32, 32);
       const oceanMat = new THREE.MeshStandardMaterial({ color: 0x0984e3, roughness: 0.4 });
-      const ocean = new THREE.Mesh(oceanGeo, oceanMat);
+      const ocean = new THREE.Mesh(new THREE.SphereGeometry(1.2, 32, 32), oceanMat);
       globeGroup.add(ocean);
 
-      // 실제 대륙 느낌의 블록형 녹색/갈색 대륙 레이어
       const landGroup = new THREE.Group();
       const landMat = new THREE.MeshStandardMaterial({ color: 0x2ed573, roughness: 0.8 });
       for(let i=0; i<30; i++) {
@@ -343,7 +380,6 @@ elif st.session_state.page == "result":
         return new THREE.Vector3(x, y, z);
       }
 
-      // 위치 표시 빨간색 3D 화살표
       const markerPos = latLonToVector3(__LAT__, __LON__, 1.25);
       const arrowGroup = new THREE.Group();
       const cone = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.28, 12), new THREE.MeshStandardMaterial({ color: 0xff4757, emissive: 0xff6b81, emissiveIntensity: 0.8 }));
