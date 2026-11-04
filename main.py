@@ -33,15 +33,14 @@ html, body, [class*='css'] { font-family: 'Jua', sans-serif !important; }
 st.markdown(custom_css, unsafe_allow_html=True)
 
 # =============================================================================
-# [화면 1] 마인크래프트 시작 화면 (3D 하트 돼지)
+# [화면 1] 시작 화면 (3D 하트 돼지)
 # =============================================================================
 if st.session_state.page == "start":
     st.markdown('<div style="text-align:center; padding: 20px 0;"><h1 style="font-size: 3.5rem; color: #fff; text-shadow: 3px 3px 0px #2d3436;">⛏️ MINECRAFT TINY HAVEN 🐷</h1><p style="font-size: 1.3rem; color: #f1f2f6; text-shadow: 1px 1px 0px #000;">사랑스러운 3D 하트 돼지와 함께 나만의 고퀄리티 마인크래프트 아지트를 만들어보세요! ❤️</p></div>', unsafe_allow_html=True)
 
-    # 안전하게 묶은 3D 하트 돼지 HTML
     pig_3d_html = """
     <div id="pig-container" style="width:100%; height:320px; border-radius:15px; overflow:hidden; background: transparent;"></div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
     <script>
       const container = document.getElementById('pig-container');
       const scene = new THREE.Scene();
@@ -174,7 +173,7 @@ elif st.session_state.page == "loading":
     st.rerun()
 
 # =============================================================================
-# [화면 4] 고퀄 3D 집 & 3D 지구본 (빨간 화살표 마커)
+# [화면 4] 고퀄 3D 집 & 3D 지구본 결과 화면
 # =============================================================================
 elif st.session_state.page == "result":
     top_col1, top_col2 = st.columns([4, 1])
@@ -214,15 +213,15 @@ elif st.session_state.page == "result":
         lat, lon = 25.2048, 55.2708
         b_color, r_color, s_color = "0x7f8c8d", "0x16a085", "0xf1c40f"
 
-    # 3D 집 HTML
-    minecraft_3d_html = f"""
+    # 3D 집 HTML (파이썬 변수 전처리 방식으로 이스케이프 오류 원천 방지)
+    minecraft_3d_template = """
     <div id="mc-container" style="width:100%; height:450px; border-radius:15px; overflow:hidden; background:#1e272e;"></div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
     <script>
       const container = document.getElementById('mc-container');
       const scene = new THREE.Scene();
       const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-      const renderer = new THREE.WebGLRenderer({{ antialias: true, alpha: true }});
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
       renderer.setSize(container.clientWidth, container.clientHeight);
       container.appendChild(renderer.domElement);
 
@@ -234,24 +233,28 @@ elif st.session_state.page == "result":
 
       const houseGroup = new THREE.Group();
 
-      const b1 = new THREE.Mesh(new THREE.BoxGeometry(3, 1.2, 2.5), new THREE.MeshStandardMaterial({{ color: {b_color}, roughness: 0.3 }}));
+      const b1Mat = new THREE.MeshStandardMaterial({ color: __B_COLOR__, roughness: 0.3 });
+      const b1 = new THREE.Mesh(new THREE.BoxGeometry(3, 1.2, 2.5), b1Mat);
       b1.position.y = 0.6;
       houseGroup.add(b1);
 
-      const b2 = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.1, 2.2), new THREE.MeshStandardMaterial({{ color: 0xffffff, roughness: 0.2 }}));
+      const b2Mat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 });
+      const b2 = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.1, 2.2), b2Mat);
       b2.position.set(-0.3, 1.75, 0.1);
       houseGroup.add(b2);
 
-      const roof = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.2, 2.4), new THREE.MeshStandardMaterial({{ color: {r_color} }}));
+      const roofMat = new THREE.MeshStandardMaterial({ color: __R_COLOR__ });
+      const roof = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.2, 2.4), roofMat);
       roof.position.set(-0.3, 2.4, 0.1);
       houseGroup.add(roof);
 
-      const winMat = new THREE.MeshStandardMaterial({{ color: 0x81ecec, transparent: true, opacity: 0.75, metalness: 0.8 }});
+      const winMat = new THREE.MeshStandardMaterial({ color: 0x81ecec, transparent: true, opacity: 0.75, metalness: 0.8 });
       const win1 = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.7, 0.05), winMat);
       win1.position.set(0.6, 0.6, 1.26);
       houseGroup.add(win1);
 
-      const pool = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.15, 1.6), new THREE.MeshStandardMaterial({{ color: {s_color}, roughness: 0.1, metalness: 0.5 }}));
+      const poolMat = new THREE.MeshStandardMaterial({ color: __S_COLOR__, roughness: 0.1, metalness: 0.5 });
+      const pool = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.15, 1.6), poolMat);
       pool.position.set(1.2, 0.08, -0.2);
       houseGroup.add(pool);
 
@@ -259,24 +262,25 @@ elif st.session_state.page == "result":
       camera.position.set(5.5, 4.5, 6.5);
       camera.lookAt(0, 1, 0);
 
-      function animate() {{
+      function animate() {
         requestAnimationFrame(animate);
         houseGroup.rotation.y += 0.008;
         renderer.render(scene, camera);
-      }}
+      }
       animate();
     </script>
     """
+    minecraft_3d_html = minecraft_3d_template.replace("__B_COLOR__", str(b_color)).replace("__R_COLOR__", str(r_color)).replace("__S_COLOR__", str(s_color))
 
     # 3D 지구본 HTML
-    globe_3d_html = f"""
+    globe_3d_template = """
     <div id="globe-container" style="width:100%; height:450px; border-radius:15px; overflow:hidden; background:#0c2461;"></div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
     <script>
       const container = document.getElementById('globe-container');
       const scene = new THREE.Scene();
       const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-      const renderer = new THREE.WebGLRenderer({{ antialias: true, alpha: true }});
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
       renderer.setSize(container.clientWidth, container.clientHeight);
       container.appendChild(renderer.domElement);
 
@@ -288,25 +292,25 @@ elif st.session_state.page == "result":
 
       const globeGroup = new THREE.Group();
 
-      const globe = new THREE.Mesh(new THREE.SphereGeometry(2, 32, 32), new THREE.MeshStandardMaterial({{ color: 0x1e3799, wireframe: true, transparent: true, opacity: 0.6 }}));
+      const globe = new THREE.Mesh(new THREE.SphereGeometry(2, 32, 32), new THREE.MeshStandardMaterial({ color: 0x1e3799, wireframe: true, transparent: true, opacity: 0.6 }));
       globeGroup.add(globe);
 
-      const innerGlobe = new THREE.Mesh(new THREE.SphereGeometry(1.98, 32, 32), new THREE.MeshStandardMaterial({{ color: 0x0a3d62 }}));
+      const innerGlobe = new THREE.Mesh(new THREE.SphereGeometry(1.98, 32, 32), new THREE.MeshStandardMaterial({ color: 0x0a3d62 }));
       globeGroup.add(innerGlobe);
 
-      function latLonToVector3(lat, lon, radius) {{
+      function latLonToVector3(lat, lon, radius) {
         const phi = (90 - lat) * (Math.PI / 180);
         const theta = (lon + 180) * (Math.PI / 180);
         const x = -(radius * Math.sin(phi) * Math.cos(theta));
         const z = (radius * Math.sin(phi) * Math.sin(theta));
         const y = (radius * Math.cos(phi));
         return new THREE.Vector3(x, y, z);
-      }}
+      }
 
-      const markerPos = latLonToVector3({lat}, {lon}, 2.05);
+      const markerPos = latLonToVector3(__LAT__, __LON__, 2.05);
       const arrowGroup = new THREE.Group();
 
-      const cone = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.4, 16), new THREE.MeshStandardMaterial({{ color: 0xff3838, emissive: 0xff4d4d, emissiveIntensity: 0.6 }}));
+      const cone = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.4, 16), new THREE.MeshStandardMaterial({ color: 0xff3838, emissive: 0xff4d4d, emissiveIntensity: 0.6 }));
       cone.rotation.x = Math.PI;
       arrowGroup.add(cone);
 
@@ -318,17 +322,18 @@ elif st.session_state.page == "result":
 
       camera.position.set(0, 0, 5.2);
 
-      const targetPos = latLonToVector3({lat}, {lon}, 2.0);
+      const targetPos = latLonToVector3(__LAT__, __LON__, 2.0);
       globeGroup.quaternion.setFromUnitVectors(targetPos.clone().normalize(), new THREE.Vector3(0, 0, 1));
 
-      function animate() {{
+      function animate() {
         requestAnimationFrame(animate);
         globeGroup.rotation.y += 0.005;
         renderer.render(scene, camera);
-      }}
+      }
       animate();
     </script>
     """
+    globe_3d_html = globe_3d_template.replace("__LAT__", str(lat)).replace("__LON__", str(lon))
 
     col1, col2 = st.columns([1, 1])
 
