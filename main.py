@@ -37,14 +37,18 @@ st.markdown(custom_css, unsafe_allow_html=True)
 # -----------------------------------------------------------------------------
 PIG_HTML_TEMPLATE = """
 <div id="pig-container" style="width:100%; height:300px; border-radius:15px; overflow:hidden; background: transparent;"></div>
-<script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-  (function() {
+  window.addEventListener('load', function() {
     const container = document.getElementById('pig-container');
+    if (!container) return;
+    const width = container.clientWidth || 300;
+    const height = container.clientHeight || 300;
+
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+    const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setSize(width, height);
     container.appendChild(renderer.domElement);
 
     const light = new THREE.DirectionalLight(0xffffff, 1.1);
@@ -103,7 +107,7 @@ PIG_HTML_TEMPLATE = """
       renderer.render(scene, camera);
     }
     animate();
-  })();
+  });
 </script>
 """
 
@@ -112,7 +116,7 @@ PIG_HTML_TEMPLATE = """
 # =============================================================================
 if st.session_state.page == "start":
     st.markdown('<div style="text-align:center; padding: 20px 0;"><h1 style="font-size: 3.5rem; color: #fff; text-shadow: 3px 3px 0px #2d3436;">⛏️ MINECRAFT HAVEN 🐷</h1></div>', unsafe_allow_html=True)
-    st.components.v1.html(PIG_HTML_TEMPLATE, height=310)
+    st.components.v1.html(PIG_HTML_TEMPLATE, height=320)
 
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
@@ -199,7 +203,6 @@ elif st.session_state.page == "result":
     weather = st.session_state.weather
     material = st.session_state.material
 
-    # 스타일 매칭
     if "벚꽃" in house_style:
         country_name = "일본 교토 (사쿠라 해안)"
         country_feature = "해안가 절벽 위 벚나무 지붕과 긴 나무 데크 다리가 바다로 이어지는 낭만적인 집입니다."
@@ -220,71 +223,63 @@ elif st.session_state.page == "result":
         country_feature = "잔잔한 호수 위에 세워진 보라색 첨탑과 화려한 발코니가 돋보이는 성입니다."
         lat, lon = 48.6360, -1.5115
         style_type = "wizard"
-    else: # 나무집
+    else:
         country_name = "인도네시아 발리 (열대우림)"
         country_feature = "거대한 열대 고목 수목 상부에 위치하며 나뭇잎 마당과 덩굴 사다리가 특징입니다."
         lat, lon = -8.5069, 115.2625
         style_type = "treehouse"
 
-    # 날씨 파라미터 매칭 (배경 하늘, 빛, 강수 효과)
     if "노을" in weather:
         bg_sky = "0xff7675"
         light_color = "0xffeaa7"
-        weather_type = "sunset"
     elif "비" in weather:
         bg_sky = "0x636e72"
         light_color = "0xb2bec3"
-        weather_type = "rain"
     elif "눈" in weather:
         bg_sky = "0xdff9fb"
         light_color = "0xffffff"
-        weather_type = "snow"
-    else: # 화창한 날
+    else:
         bg_sky = "0x74b9ff"
         light_color = "0xfffaed"
-        weather_type = "clear"
 
-    # 3D 집 & 선택된 날씨/배경 요소 JavaScript
+    # 3D 집 자바스크립트 렌더링 코드
     HOUSE_3D_TEMPLATE = """
-    <div id="mc-container" style="width:100%; height:530px; border-radius:15px; overflow:hidden; background:#74b9ff;"></div>
-    <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+    <div id="mc-container" style="width:100%; height:500px; border-radius:15px; overflow:hidden; background:#74b9ff;"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
-      (function() {
+      function initHouse() {
         const container = document.getElementById('mc-container');
+        if (!container) return;
+        const width = container.clientWidth || 500;
+        const height = container.clientHeight || 500;
+
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(__BG_SKY__);
 
-        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setSize(width, height);
         container.appendChild(renderer.domElement);
 
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
         scene.add(ambientLight);
-        const dirLight1 = new THREE.DirectionalLight(__LIGHT_COLOR__, 1.3);
-        dirLight1.position.set(12, 22, 15);
-        scene.add(dirLight1);
+        const dirLight = new THREE.DirectionalLight(__LIGHT_COLOR__, 1.3);
+        dirLight.position.set(12, 22, 15);
+        scene.add(dirLight);
 
         const mainGroup = new THREE.Group();
-
-        // 선택 스타일별 개별 마당/바다/호수/수목 배경 연출
         const style = "__STYLE_TYPE__";
 
         if (style === "cherry") {
-          // 🌸 벚꽃집: 바다 + 백사장 + 해안 데크 다리
-          const seaMat = new THREE.MeshStandardMaterial({ color: 0x0984e3, roughness: 0.1 });
-          const sea = new THREE.Mesh(new THREE.BoxGeometry(16, 0.3, 16), seaMat);
+          const sea = new THREE.Mesh(new THREE.BoxGeometry(16, 0.3, 16), new THREE.MeshStandardMaterial({ color: 0x0984e3, roughness: 0.1 }));
           sea.position.y = -0.3;
           mainGroup.add(sea);
 
-          const sandMat = new THREE.MeshStandardMaterial({ color: 0xffeaa7 });
-          const sand = new THREE.Mesh(new THREE.BoxGeometry(9, 0.4, 9), sandMat);
+          const sand = new THREE.Mesh(new THREE.BoxGeometry(9, 0.4, 9), new THREE.MeshStandardMaterial({ color: 0xffeaa7 }));
           sand.position.set(-2, -0.1, -2);
           mainGroup.add(sand);
 
-          // 집 본체 & 벚꽃 지붕
-          const houseMat = new THREE.MeshStandardMaterial({ color: 0xffb8c6 });
-          const body = new THREE.Mesh(new THREE.BoxGeometry(3.2, 1.8, 2.6), houseMat);
+          const body = new THREE.Mesh(new THREE.BoxGeometry(3.2, 1.8, 2.6), new THREE.MeshStandardMaterial({ color: 0xffb8c6 }));
           body.position.set(-2, 1.0, -2);
           mainGroup.add(body);
 
@@ -295,54 +290,43 @@ elif st.session_state.page == "result":
             mainGroup.add(leaf);
           }
 
-          // 바다로 연결되는 나무 다리 (Deck Bridge)
-          const bridgeMat = new THREE.MeshStandardMaterial({ color: 0x8d5b4c });
-          const bridge = new THREE.Mesh(new THREE.BoxGeometry(6.0, 0.2, 1.2), bridgeMat);
+          const bridge = new THREE.Mesh(new THREE.BoxGeometry(6.0, 0.2, 1.2), new THREE.MeshStandardMaterial({ color: 0x8d5b4c }));
           bridge.position.set(2.0, 0.6, -1.0);
           bridge.rotation.y = -0.3;
           mainGroup.add(bridge);
 
         } else if (style === "medieval") {
-          // 🏰 중세 저택: 넓은 돌 마당 + 작은 호수 + 돌 굴뚝
-          const groundMat = new THREE.MeshStandardMaterial({ color: 0x55efc4 });
-          const ground = new THREE.Mesh(new THREE.BoxGeometry(14, 0.3, 14), groundMat);
+          const ground = new THREE.Mesh(new THREE.BoxGeometry(14, 0.3, 14), new THREE.MeshStandardMaterial({ color: 0x55efc4 }));
           ground.position.y = -0.2;
           mainGroup.add(ground);
 
-          const pondMat = new THREE.MeshStandardMaterial({ color: 0x74b9ff });
-          const pond = new THREE.Mesh(new THREE.BoxGeometry(4, 0.35, 3), pondMat);
+          const pond = new THREE.Mesh(new THREE.BoxGeometry(4, 0.35, 3), new THREE.MeshStandardMaterial({ color: 0x74b9ff }));
           pond.position.set(3, -0.15, 3);
           mainGroup.add(pond);
 
-          const stoneMat = new THREE.MeshStandardMaterial({ color: 0x636e72 });
-          const b1 = new THREE.Mesh(new THREE.BoxGeometry(3.6, 1.4, 3.0), stoneMat);
+          const b1 = new THREE.Mesh(new THREE.BoxGeometry(3.6, 1.4, 3.0), new THREE.MeshStandardMaterial({ color: 0x636e72 }));
           b1.position.y = 0.7;
           mainGroup.add(b1);
 
-          const woodMat = new THREE.MeshStandardMaterial({ color: 0xd7ccc8 });
-          const b2 = new THREE.Mesh(new THREE.BoxGeometry(3.0, 1.5, 2.6), woodMat);
+          const b2 = new THREE.Mesh(new THREE.BoxGeometry(3.0, 1.5, 2.6), new THREE.MeshStandardMaterial({ color: 0xd7ccc8 }));
           b2.position.set(0, 2.15, 0);
           mainGroup.add(b2);
 
-          const roofMat = new THREE.MeshStandardMaterial({ color: 0x2d3436 });
-          const roof = new THREE.Mesh(new THREE.ConeGeometry(2.8, 1.8, 4), roofMat);
+          const roof = new THREE.Mesh(new THREE.ConeGeometry(2.8, 1.8, 4), new THREE.MeshStandardMaterial({ color: 0x2d3436 }));
           roof.position.y = 3.8;
           roof.rotation.y = Math.PI / 4;
           mainGroup.add(roof);
 
-          const chimney = new THREE.Mesh(new THREE.BoxGeometry(0.6, 2.4, 0.6), stoneMat);
+          const chimney = new THREE.Mesh(new THREE.BoxGeometry(0.6, 2.4, 0.6), new THREE.MeshStandardMaterial({ color: 0x636e72 }));
           chimney.position.set(1.2, 2.8, 0.8);
           mainGroup.add(chimney);
 
         } else if (style === "wizard") {
-          // 🔮 마법사의 집: 호수 위 성 + 보라색 뾰족 탑
-          const lakeMat = new THREE.MeshStandardMaterial({ color: 0x0984e3, roughness: 0.2 });
-          const lake = new THREE.Mesh(new THREE.BoxGeometry(15, 0.3, 15), lakeMat);
+          const lake = new THREE.Mesh(new THREE.BoxGeometry(15, 0.3, 15), new THREE.MeshStandardMaterial({ color: 0x0984e3, roughness: 0.2 }));
           lake.position.y = -0.2;
           mainGroup.add(lake);
 
-          const islandMat = new THREE.MeshStandardMaterial({ color: 0x2ed573 });
-          const island = new THREE.Mesh(new THREE.BoxGeometry(7, 0.5, 7), islandMat);
+          const island = new THREE.Mesh(new THREE.BoxGeometry(7, 0.5, 7), new THREE.MeshStandardMaterial({ color: 0x2ed573 }));
           island.position.y = 0.0;
           mainGroup.add(island);
 
@@ -355,42 +339,34 @@ elif st.session_state.page == "result":
           tower.position.set(-1.5, 2.0, -1.0);
           mainGroup.add(tower);
 
-          const spireMat = new THREE.MeshStandardMaterial({ color: 0x8e44ad });
-          const spire = new THREE.Mesh(new THREE.ConeGeometry(1.1, 2.5, 8), spireMat);
+          const spire = new THREE.Mesh(new THREE.ConeGeometry(1.1, 2.5, 8), new THREE.MeshStandardMaterial({ color: 0x8e44ad }));
           spire.position.set(-1.5, 4.8, -1.0);
           mainGroup.add(spire);
 
         } else if (style === "mossy") {
-          // 🌿 이끼 샬레: 자연 정원 마당 + 덩굴 연못
-          const yardMat = new THREE.MeshStandardMaterial({ color: 0x00b894 });
-          const yard = new THREE.Mesh(new THREE.BoxGeometry(14, 0.3, 14), yardMat);
+          const yard = new THREE.Mesh(new THREE.BoxGeometry(14, 0.3, 14), new THREE.MeshStandardMaterial({ color: 0x00b894 }));
           yard.position.y = -0.2;
           mainGroup.add(yard);
 
-          const bodyMat = new THREE.MeshStandardMaterial({ color: 0x8d5b4c });
-          const body = new THREE.Mesh(new THREE.BoxGeometry(3.2, 1.6, 2.6), bodyMat);
+          const body = new THREE.Mesh(new THREE.BoxGeometry(3.2, 1.6, 2.6), new THREE.MeshStandardMaterial({ color: 0x8d5b4c }));
           body.position.y = 0.8;
           mainGroup.add(body);
 
-          const mossMat = new THREE.MeshStandardMaterial({ color: 0x27ae60 });
-          const roof = new THREE.Mesh(new THREE.ConeGeometry(2.6, 1.6, 4), mossMat);
+          const roof = new THREE.Mesh(new THREE.ConeGeometry(2.6, 1.6, 4), new THREE.MeshStandardMaterial({ color: 0x27ae60 }));
           roof.position.y = 2.4;
           roof.rotation.y = Math.PI / 4;
           mainGroup.add(roof);
 
         } else {
-          // 🌳 나무집: 울창한 수목 열대우림 마당
           const jungleGround = new THREE.Mesh(new THREE.BoxGeometry(14, 0.3, 14), new THREE.MeshStandardMaterial({ color: 0x00b894 }));
           jungleGround.position.y = -0.2;
           mainGroup.add(jungleGround);
 
-          const trunkMat = new THREE.MeshStandardMaterial({ color: 0x5c4033 });
-          const trunk = new THREE.Mesh(new THREE.BoxGeometry(1.8, 4.2, 1.8), trunkMat);
+          const trunk = new THREE.Mesh(new THREE.BoxGeometry(1.8, 4.2, 1.8), new THREE.MeshStandardMaterial({ color: 0x5c4033 }));
           trunk.position.y = 2.0;
           mainGroup.add(trunk);
 
-          const houseMat = new THREE.MeshStandardMaterial({ color: 0x8d5b4c });
-          const cabin = new THREE.Mesh(new THREE.BoxGeometry(2.8, 1.6, 2.6), houseMat);
+          const cabin = new THREE.Mesh(new THREE.BoxGeometry(2.8, 1.6, 2.6), new THREE.MeshStandardMaterial({ color: 0x8d5b4c }));
           cabin.position.set(0, 3.8, 0);
           mainGroup.add(cabin);
 
@@ -404,9 +380,7 @@ elif st.session_state.page == "result":
           }
         }
 
-        mainGroup.add(houseGroup);
         scene.add(mainGroup);
-
         camera.position.set(8, 6, 9);
         camera.lookAt(0, 1.5, 0);
 
@@ -416,7 +390,8 @@ elif st.session_state.page == "result":
           renderer.render(scene, camera);
         }
         animate();
-      })();
+      }
+      setTimeout(initHouse, 100);
     </script>
     """
     house_3d_html = (
@@ -426,29 +401,30 @@ elif st.session_state.page == "result":
         .replace("__STYLE_TYPE__", style_type)
     )
 
-    # 3D 미니 지구본 JavaScript
+    # 3D 미니 지구본 코드
     GLOBE_3D_TEMPLATE = """
     <div id="mini-globe-container" style="width:100%; height:180px; border-radius:12px; overflow:hidden; background:#0c2461;"></div>
-    <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
-      (function() {
+      function initGlobe() {
         const container = document.getElementById('mini-globe-container');
+        if (!container) return;
+        const width = container.clientWidth || 200;
+        const height = container.clientHeight || 180;
+
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.1, 1000);
+        const camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setSize(width, height);
         container.appendChild(renderer.domElement);
 
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.95);
-        scene.add(ambientLight);
+        scene.add(new THREE.AmbientLight(0xffffff, 0.95));
         const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
         dirLight.position.set(5, 5, 5);
         scene.add(dirLight);
 
         const globeGroup = new THREE.Group();
-
-        const oceanMat = new THREE.MeshStandardMaterial({ color: 0x0984e3, roughness: 0.4 });
-        const ocean = new THREE.Mesh(new THREE.SphereGeometry(1.2, 32, 32), oceanMat);
+        const ocean = new THREE.Mesh(new THREE.SphereGeometry(1.2, 32, 32), new THREE.MeshStandardMaterial({ color: 0x0984e3, roughness: 0.4 }));
         globeGroup.add(ocean);
 
         const landGroup = new THREE.Group();
@@ -494,7 +470,8 @@ elif st.session_state.page == "result":
           renderer.render(scene, camera);
         }
         animate();
-      })();
+      }
+      setTimeout(initGlobe, 100);
     </script>
     """
     globe_3d_html = GLOBE_3D_TEMPLATE.replace("__LAT__", str(lat)).replace("__LON__", str(lon))
@@ -503,11 +480,11 @@ elif st.session_state.page == "result":
 
     with col1:
         st.subheader("🧊 3D 마인크래프트 집 & 환경 배경")
-        st.components.v1.html(house_3d_html, height=530)
+        st.components.v1.html(house_3d_html, height=520)
 
     with col2:
         st.subheader("🌐 실제 지구본 위치 표시")
-        st.components.v1.html(globe_3d_html, height=190)
+        st.components.v1.html(globe_3d_html, height=200)
         
         st.markdown(f"""
         <div class="mc-box">
@@ -527,5 +504,4 @@ elif st.session_state.page == "result":
         "상세 설명": [house_style, season, weather, material, country_name]
     }
     st.table(report_data)
-    st.success("🎉 하트 돼지와 함께한 마인크래프트 집 생성이 완료되었습니다!")
-    
+    st.success("🎉 마인크래프트 집 생성이 완료되었습니다!")
